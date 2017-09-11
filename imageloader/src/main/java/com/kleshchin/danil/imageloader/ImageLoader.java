@@ -1,0 +1,152 @@
+package com.kleshchin.danil.imageloader;
+
+import android.Manifest;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.RequiresPermission;
+import android.support.v4.content.ContextCompat;
+import android.util.LruCache;
+import android.widget.ImageView;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Created by Danil Kleshchin on 11.09.2017.
+ */
+
+public class ImageLoader implements ImageDownloader.OnFileDownloadListener {
+    private static final String KEY_CACHE_DIR = "pathToCacheDir";
+
+    private int placeholderId_;
+    @Nullable
+    private String url_;
+    @Nullable
+    private ImageView imageView_;
+    @Nullable
+    private Context context_;
+    private static Map<ImageView, AsyncTask<String, Integer, Bitmap>> downloadAsyncTasks = new HashMap<>();
+
+    private ImageLoader(@NonNull ImageLoaderBuilder builder) {
+        url_ = builder.url_;
+        imageView_ = builder.imageView_;
+        placeholderId_ = builder.placeholderId_;
+        context_ = builder.context_;
+        if (imageView_ != null) {
+            imageView_.setImageDrawable(ContextCompat.getDrawable(context_, placeholderId_));
+        }
+        loadImageIntoView();
+    }
+
+    @Override
+    public void onFileDownload(@Nullable Bitmap bitmap, @Nullable String filePath) {
+        if (imageView_ != null && filePath != null && context_ != null) {
+            imageView_.setImageDrawable(ContextCompat.getDrawable(context_, placeholderId_));
+            LruCache<String, Object> lruCache = Cache.getInstance(context_).getLruCache();
+            if (bitmap != null) {
+                if (!isCached(filePath)) {
+                    lruCache.put(filePath, bitmap);
+                }
+                imageView_.setImageBitmap(bitmap);
+            }
+        }
+    }
+
+    private void loadImageIntoView() {
+        if (imageView_ != null && url_ != null && context_ != null) {
+            LruCache<String, Object> lruCache = Cache.getInstance(context_).getLruCache();
+            checkAvailableMemory(lruCache, 2 * 1024 * 1024);
+            AsyncTask<String, Integer, Bitmap> asyncTask = downloadAsyncTasks.get(imageView_);
+            if (asyncTask != null) {
+                if (asyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+                    asyncTask.cancel(true);
+                }
+            }
+            String filePath = getBasePathToFile(context_) + File.separator + createFileNameFromStringUrl(url_);
+            Bitmap bitmap = (Bitmap) Cache.getInstance(context_).getLruCache().get(filePath);
+            if (bitmap != null) {
+                onFileDownload(bitmap, filePath);
+            } else {
+                final ImageDownloader task = new ImageDownloader(context_);
+                task.setListener(this);
+                task.setBasePathToDownloadDir(getBasePathToFile(context_));
+                downloadAsyncTasks.put(imageView_, task);
+                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, url_);
+            }
+        }
+    }
+
+    private void checkAvailableMemory(LruCache<String, Object> lruCache, int minBytesMemory) {
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long availableMemory = maxMemory - usedMemory;
+        if (availableMemory <= minBytesMemory) {
+            lruCache.evictAll();
+        }
+    }
+
+    private boolean isCached(@NonNull String filePath) {
+        return context_ != null && Cache.getInstance(context_).getLruCache().get(filePath) != null;
+    }
+
+    @NonNull
+    static String createFileNameFromStringUrl(@NonNull String strUrl) {
+        return strUrl.substring(strUrl.lastIndexOf("/") + 1, strUrl.length());
+    }
+
+    @NonNull
+    private static String getBasePathToFile(@NonNull Context context) {
+        LruCache<String, Object> lruCache = Cache.getInstance(context).getLruCache();
+        if (lruCache.get(KEY_CACHE_DIR) == null) {
+            lruCache.put(KEY_CACHE_DIR,
+                    new File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Icons")
+                            .getAbsolutePath());
+        }
+        return (String) lruCache.get(KEY_CACHE_DIR);
+    }
+
+    public static class ImageLoaderBuilder {
+        private int placeholderId_;
+        @Nullable
+        private String url_;
+        @Nullable
+        private ImageView imageView_;
+        @NonNull
+        private Context context_;
+
+        public ImageLoaderBuilder(@NonNull Context context) {
+            context_ = context;
+        }
+
+        public ImageLoaderBuilder load(@NonNull String url) {
+            url_ = url;
+            return this;
+        }
+
+        public ImageLoaderBuilder into(@NonNull ImageView imageView) {
+            imageView_ = imageView;
+            return this;
+        }
+
+        public ImageLoaderBuilder placeholder(int resourceId) {
+            placeholderId_ = resourceId;
+            return this;
+        }
+
+        @RequiresPermission(allOf = {
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+        })
+        public ImageLoader build() {
+            return new ImageLoader(this);
+        }
+    }
+}

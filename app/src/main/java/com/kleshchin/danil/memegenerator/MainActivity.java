@@ -1,6 +1,7 @@
 package com.kleshchin.danil.memegenerator;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -10,6 +11,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.kleshchin.danil.memegenerator.models.Meme;
@@ -22,6 +27,10 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
     private List<Meme> memes_ = new ArrayList<>();
     private MemeAdapter adapter_ = new MemeAdapter(this, memes_);
     private SwipeRefreshLayout refreshLayout_;
+    private SearchView searchView_;
+    TextView toolbarTitle_;
+    @Nullable
+    private Handler handler_ = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +72,24 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.addItemDecoration(divider);
         recyclerView.setAdapter(adapter_);
+        toolbarTitle_ = (TextView) findViewById(R.id.toolbar_search_title);
+        searchView_ = (SearchView) findViewById(R.id.search_view_meme);
+        searchView_.setOnQueryTextListener(new OnQueryTextSearchListener());
+        searchView_.setOnSearchClickListener(new OnSearchViewClickListener());
+        searchView_.setOnCloseListener(new OnCloseSearchViewListener());
+        EditText searchEditText = (EditText)
+                searchView_.findViewById(android.support.v7.appcompat.R.id.search_src_text);
+        searchEditText.setTextColor(ContextCompat.getColor(this, R.color.colorAccent));
+    }
+
+    private class OnCloseSearchViewListener implements SearchView.OnCloseListener {
+        @Override
+        public boolean onClose() {
+            toolbarTitle_.setVisibility(View.VISIBLE);
+            String emptyQuery = "";
+            adapter_.searchByQuery(emptyQuery);
+            return false;
+        }
     }
 
     private class OnSwipeRefreshListener implements SwipeRefreshLayout.OnRefreshListener {
@@ -72,6 +99,38 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
             LoaderManager loaderManager = getSupportLoaderManager();
             MemeRepository.getInstance()
                     .setOnRefreshMemeListener(MainActivity.this, loaderManager, MainActivity.this);
+        }
+    }
+
+    private class OnSearchViewClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            toolbarTitle_.setVisibility(View.GONE);
+        }
+    }
+
+    private class OnQueryTextSearchListener implements SearchView.OnQueryTextListener {
+
+        @Override
+        public boolean onQueryTextSubmit(String query) {
+            searchView_.clearFocus();
+            adapter_.searchByQuery(query);
+            return true;
+        }
+
+        @Override
+        public boolean onQueryTextChange(final @NonNull String newText) {
+            if (newText.length() > 2) {
+                if (handler_ != null) {
+                    handler_.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            adapter_.searchByQuery(newText);
+                        }
+                    }, 2000);
+                }
+            }
+            return true;
         }
     }
 }

@@ -19,11 +19,15 @@ class MemeAdapter extends RecyclerView.Adapter<MemeViewHolder> {
     @NonNull
     private List<Meme> memes_ = new ArrayList<>();
     @NonNull
+    private List<Meme> memesCopy_;
+    @NonNull
     private Context context_;
 
     MemeAdapter(@NonNull Context context, @NonNull List<Meme> memes) {
         context_ = context;
-        memes_ = memes;
+        memesCopy_ = new ArrayList<>(memes);
+        memes_.clear();
+        memes_.addAll(memes);
     }
 
     @Override
@@ -44,6 +48,23 @@ class MemeAdapter extends RecyclerView.Adapter<MemeViewHolder> {
     }
 
     void setMemes(@NonNull List<Meme> memes) {
-        memes_ = memes;
+        memesCopy_.clear();
+        memes_.clear();
+        memesCopy_.addAll(memes);
+        memes_.addAll(memes);
+    }
+
+    void searchByQuery(@NonNull String query) {
+        memes_.clear();
+        if (query.isEmpty()) {
+            memes_.addAll(memesCopy_);
+        }
+        query = query.toLowerCase();
+        for (Meme meme : memesCopy_) {
+            if (meme.name.toLowerCase().contains(query)) {
+                memes_.add(meme);
+            }
+        }
+        notifyDataSetChanged();
     }
 }

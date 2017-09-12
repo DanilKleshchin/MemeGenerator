@@ -6,6 +6,7 @@
     android:layout_height="?attr/actionBarSize"
     android:background="@color/colorPrimary"
     app:layout_scrollFlags="scroll|enterAlways"
+    android:theme="@style/ToolbarTheme"
     app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
     <TextView
@@ -14,7 +15,7 @@
         android:layout_height="match_parent"
         android:gravity="left|center"
         android:text="@string/app_name"
-        android:textColor="@android:color/white"
+        android:textColor="@color/colorAccent"
         android:textSize="@dimen/meme_name_size"/>
 
     <RelativeLayout
@@ -26,6 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_alignParentRight="true"
-            android:textSize="@dimen/meme_name_size"/>
+            android:textSize="@dimen/meme_name_size"
+            android:theme="@style/SearchViewTheme"/>
     </RelativeLayout>
 </android.support.v7.widget.Toolbar>

@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import com.kleshchin.danil.memegenerator.models.Meme;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ import java.util.List;
  */
 class MemeAdapter extends RecyclerView.Adapter<MemeViewHolder> {
     @NonNull
-    private List<Meme> memes_;
+    private List<Meme> memes_ = new ArrayList<>();
     @NonNull
     private Context context_;
 
@@ -42,7 +43,7 @@ class MemeAdapter extends RecyclerView.Adapter<MemeViewHolder> {
         return memes_.size();
     }
 
-    public void setMemes(@NonNull List<Meme> memes) {
+    void setMemes(@NonNull List<Meme> memes) {
         memes_ = memes;
     }
 }

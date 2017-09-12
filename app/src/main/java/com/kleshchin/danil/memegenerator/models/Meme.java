@@ -8,6 +8,6 @@ public class Meme {
     public String name;
     public int id;
     public String url;
-    public String width;
-    public String height;
+    public int width;
+    public int height;
 }

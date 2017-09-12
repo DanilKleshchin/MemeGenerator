@@ -16,7 +16,6 @@ import com.kleshchin.danil.memegenerator.models.Meme;
 /**
  * Created by Danil Kleshchin on 11.09.2017.
  */
-
 class MemeViewHolder extends RecyclerView.ViewHolder {
 
     private TextView memeName_;
@@ -31,13 +30,20 @@ class MemeViewHolder extends RecyclerView.ViewHolder {
     void setData(@NonNull Context context, @NonNull Meme meme) {
         memeName_.setText(meme.name);
         ImageLoader.ImageLoaderBuilder builder = new ImageLoader.ImageLoaderBuilder(context);
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (isPermissionGrated(context)) {
             return;
         }
+
         builder.load(meme.url)
                 .into(memeIcon_)
                 .placeholder(R.mipmap.ic_meme_placeholder)
                 .build();
     }
 
+    private boolean isPermissionGrated(@NonNull Context context) {
+        return ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED;
+    }
 }

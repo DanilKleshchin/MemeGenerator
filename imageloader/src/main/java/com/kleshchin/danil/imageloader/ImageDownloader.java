@@ -23,7 +23,6 @@ import static com.kleshchin.danil.imageloader.ImageLoader.createFileNameFromStri
 /**
  * Created by Danil Kleshchin on 11.09.2017.
  */
-
 class ImageDownloader extends AsyncTask<String, Integer, Void> {
     @Nullable
     private String path_;
@@ -50,33 +49,28 @@ class ImageDownloader extends AsyncTask<String, Integer, Void> {
 
     @Override
     protected Void doInBackground(String... stringUrl) {
-        if (path_ != null) {
-            File file = createDirectory(path_);
-            file = new File(file.getPath() + File.separator + createFileNameFromStringUrl(stringUrl[0]));
-            if (isNetworkAvailable()) {
-                if (file.exists()) {
-                    file.delete();
-                }
-                try {
-                    filePath = file.getAbsolutePath();
-                    OutputStream outputStream = new FileOutputStream(filePath);
-                    downloadFile(stringUrl[0], outputStream);
-                } catch (FileNotFoundException e) {
-                    e.getMessage();
-                }
-            } else {
-                if (file.exists()) {
-                    filePath = file.getAbsolutePath();
-                }
+        if (path_ == null) {
+            return null;
+        }
+        File file = createDirectory(path_);
+        file = new File(file.getPath() + File.separator + createFileNameFromStringUrl(stringUrl[0]));
+        if (checkNetworkAvailable()) {
+            if (file.exists()) {
+                file.delete();
+            }
+            try {
+                filePath = file.getAbsolutePath();
+                OutputStream outputStream = new FileOutputStream(filePath);
+                downloadFile(stringUrl[0], outputStream);
+            } catch (FileNotFoundException e) {
+                e.getMessage();
+            }
+        } else {
+            if (file.exists()) {
+                filePath = file.getAbsolutePath();
             }
         }
-        if (!filePath.equals("")) {
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds = false;
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
-            options.inDither = true;
-            bitmap_ = BitmapFactory.decodeFile(filePath, options);
-        }
+        loadImageIntoView();
         return null;
     }
 
@@ -87,7 +81,16 @@ class ImageDownloader extends AsyncTask<String, Integer, Void> {
         }
     }
 
-    private boolean isNetworkAvailable() {
+    @NonNull
+    private File createDirectory(@NonNull String path) {
+        File file = new File(path);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        return file;
+    }
+
+    private boolean checkNetworkAvailable() {
         if (context_ != null) {
             ConnectivityManager cm = (ConnectivityManager) context_.getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo networkInfo = cm.getActiveNetworkInfo();
@@ -96,15 +99,6 @@ class ImageDownloader extends AsyncTask<String, Integer, Void> {
                     networkInfo.isConnected();
         }
         return false;
-    }
-
-    @NonNull
-    private File createDirectory(@NonNull String path) {
-        File file = new File(path);
-        if (!file.exists()) {
-            file.mkdirs();
-        }
-        return file;
     }
 
     private void downloadFile(@NonNull String strUrl, @NonNull OutputStream outputStream) {
@@ -124,6 +118,16 @@ class ImageDownloader extends AsyncTask<String, Integer, Void> {
             }
         } catch (IOException e) {
             e.getMessage();
+        }
+    }
+
+    private void loadImageIntoView() {
+        if (!filePath.equals("")) {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = false;
+            options.inPreferredConfig = Bitmap.Config.RGB_565;
+            options.inDither = true;
+            bitmap_ = BitmapFactory.decodeFile(filePath, options);
         }
     }
 

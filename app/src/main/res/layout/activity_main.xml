@@ -6,6 +6,17 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:orientation="vertical"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
+        <include
+            android:id="@+id/searching_toolbar"
+            layout="@layout/toolbar_search_view"/>
+    </android.support.design.widget.AppBarLayout>
+
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/meme_swipe_refresh"
         android:layout_width="wrap_content"

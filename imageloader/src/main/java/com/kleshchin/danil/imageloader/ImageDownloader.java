@@ -24,7 +24,7 @@ import static com.kleshchin.danil.imageloader.ImageLoader.createFileNameFromStri
  * Created by Danil Kleshchin on 11.09.2017.
  */
 
-class ImageDownloader extends AsyncTask<String, Integer, Bitmap> {
+class ImageDownloader extends AsyncTask<String, Integer, Void> {
     @Nullable
     private String path_;
     @Nullable
@@ -34,6 +34,7 @@ class ImageDownloader extends AsyncTask<String, Integer, Bitmap> {
     @NonNull
     private
     String filePath = "";
+    private Bitmap bitmap_;
 
     ImageDownloader(@NonNull Context context) {
         context_ = context;
@@ -48,8 +49,7 @@ class ImageDownloader extends AsyncTask<String, Integer, Bitmap> {
     }
 
     @Override
-    protected Bitmap doInBackground(String... stringUrl) {
-
+    protected Void doInBackground(String... stringUrl) {
         if (path_ != null) {
             File file = createDirectory(path_);
             file = new File(file.getPath() + File.separator + createFileNameFromStringUrl(stringUrl[0]));
@@ -61,12 +61,6 @@ class ImageDownloader extends AsyncTask<String, Integer, Bitmap> {
                     filePath = file.getAbsolutePath();
                     OutputStream outputStream = new FileOutputStream(filePath);
                     downloadFile(stringUrl[0], outputStream);
-                    file = new File(filePath);
-                    if (file.length() == 0) {
-                        file.delete();
-                        outputStream = new FileOutputStream(filePath);
-                        downloadFile(createClubNameWithoutFC(stringUrl[0]), outputStream);
-                    }
                 } catch (FileNotFoundException e) {
                     e.getMessage();
                 }
@@ -81,15 +75,15 @@ class ImageDownloader extends AsyncTask<String, Integer, Bitmap> {
             options.inJustDecodeBounds = false;
             options.inPreferredConfig = Bitmap.Config.RGB_565;
             options.inDither = true;
-            return BitmapFactory.decodeFile(filePath, options);
+            bitmap_ = BitmapFactory.decodeFile(filePath, options);
         }
         return null;
     }
 
     @Override
-    protected void onPostExecute(Bitmap bitmap) {
+    protected void onPostExecute(Void aVoid) {
         if (listener_ != null) {
-            listener_.onFileDownload(bitmap, filePath);
+            listener_.onFileDownload(bitmap_, filePath);
         }
     }
 
@@ -102,16 +96,6 @@ class ImageDownloader extends AsyncTask<String, Integer, Bitmap> {
                     networkInfo.isConnected();
         }
         return false;
-    }
-
-    @NonNull
-    private String createClubNameWithoutFC(@NonNull String iconUrl) {
-        String extension = ".png";
-        try {
-            return iconUrl.substring(0, iconUrl.lastIndexOf("-")) + extension;
-        } catch (IndexOutOfBoundsException e) {
-            return iconUrl;
-        }
     }
 
     @NonNull

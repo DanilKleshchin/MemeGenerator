@@ -14,9 +14,8 @@ class Cache {
 
     private Cache(@NonNull Context context) {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        int maxKb = activityManager.getMemoryClass() * 1024;
-        int limitKb = maxKb / 8;
-        lruCache_ = new LruCache<>(limitKb);
+        int diskCacheSize = (activityManager.getMemoryClass() * 1024 * 1024) / 8;
+        lruCache_ = new LruCache<>(diskCacheSize);
     }
 
     static Cache getInstance(@NonNull Context context) {

@@ -9,9 +9,14 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -28,7 +33,9 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
     private MemeAdapter adapter_ = new MemeAdapter(this, memes_);
     private SwipeRefreshLayout refreshLayout_;
     private SearchView searchView_;
+    private RecyclerView recyclerView_;
     TextView toolbarTitle_;
+    private static boolean isLinearLayoutRecyclerView_ = true;
     @Nullable
     private Handler handler_ = new Handler();
 
@@ -39,6 +46,46 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
         bindViews();
         LoaderManager loaderManager = getSupportLoaderManager();
         MemeRepository.getInstance().setMemeListener(this, loaderManager, this);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.meme_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.change_layout:
+                changeRecyclerViewLayout(item);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void changeRecyclerViewLayout(@NonNull MenuItem item) {
+        int scrollPosition = 0;
+        if (recyclerView_.getLayoutManager() != null) {
+            if (isLinearLayoutRecyclerView_) {
+                scrollPosition = ((LinearLayoutManager) recyclerView_.getLayoutManager())
+                        .findFirstVisibleItemPosition();
+            } else {
+                scrollPosition = ((GridLayoutManager) recyclerView_.getLayoutManager())
+                        .findFirstVisibleItemPosition();
+            }
+        }
+        RecyclerView.LayoutManager layoutManager = isLinearLayoutRecyclerView_ ?
+                new GridLayoutManager(this, 2) :
+                new LinearLayoutManager(this);
+        item.setIcon(isLinearLayoutRecyclerView_ ?
+                ContextCompat.getDrawable(this, R.mipmap.ic_view_list) :
+                ContextCompat.getDrawable(this, R.mipmap.ic_view_module));
+        recyclerView_.setLayoutManager(layoutManager);
+        recyclerView_.scrollToPosition(scrollPosition);
+        isLinearLayoutRecyclerView_ = !isLinearLayoutRecyclerView_;
     }
 
     @Override
@@ -61,17 +108,19 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
     }
 
     private void bindViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.searching_toolbar);
+        setSupportActionBar(toolbar);
         refreshLayout_ = (SwipeRefreshLayout) findViewById(R.id.meme_swipe_refresh);
         refreshLayout_.setRefreshing(true);
         refreshLayout_.setOnRefreshListener(new OnSwipeRefreshListener());
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.meme_recycler_view);
+        recyclerView_ = (RecyclerView) findViewById(R.id.meme_recycler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        DividerItemDecoration divider = new DividerItemDecoration(recyclerView.getContext(),
+        DividerItemDecoration divider = new DividerItemDecoration(recyclerView_.getContext(),
                 layoutManager.getOrientation());
         divider.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider_recycler_view));
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.addItemDecoration(divider);
-        recyclerView.setAdapter(adapter_);
+        recyclerView_.setLayoutManager(layoutManager);
+        recyclerView_.addItemDecoration(divider);
+        recyclerView_.setAdapter(adapter_);
         toolbarTitle_ = (TextView) findViewById(R.id.toolbar_search_title);
         searchView_ = (SearchView) findViewById(R.id.search_view_meme);
         searchView_.setOnQueryTextListener(new OnQueryTextSearchListener());
@@ -127,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
                         public void run() {
                             adapter_.searchByQuery(newText);
                         }
-                    }, 2000);
+                    }, 500);
                 }
             }
             return true;

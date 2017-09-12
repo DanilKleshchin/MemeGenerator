@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">MemeGenerator</string>
     <string name="connection_error">Connection error</string>
+    <string name="change_layout">Change layout</string>
 </resources>

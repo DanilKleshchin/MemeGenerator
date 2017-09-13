@@ -1,6 +1,7 @@
 package com.kleshchin.danil.imageloader;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
@@ -95,17 +96,22 @@ public class ImageLoader implements ImageDownloader.OnFileDownloadListener {
     }
 
     private void checkAvailableMemory(LruCache<String, Object> lruCache, int minBytesMemory) {
+        ActivityManager activityManager = (ActivityManager) context_.getSystemService(Context.ACTIVITY_SERVICE);
+        int diskCacheSize = (activityManager.getMemoryClass() * 1024 * 1024) / 8;
         Runtime runtime = Runtime.getRuntime();
         long maxMemory = runtime.maxMemory();
         long usedMemory = runtime.totalMemory() - runtime.freeMemory();
         long availableMemory = maxMemory - usedMemory;
-        if (availableMemory <= minBytesMemory) {
-            /*int size = bitmaps.size() / 2;
-            for (int i = 0; i < size; ++i) {
-                bitmaps.get(i).recycle();
-            }*/
+        if (usedMemory > diskCacheSize) {
             lruCache.evictAll();
         }
+        /*if (availableMemory <= minBytesMemory) {
+            *//*int size = bitmaps.size() / 2;
+            for (int i = 0; i < size; ++i) {
+                bitmaps.get(i).recycle();
+            }*//*
+            lruCache.evictAll();
+        }*/
     }
 
     private boolean isCached(@NonNull String filePath) {

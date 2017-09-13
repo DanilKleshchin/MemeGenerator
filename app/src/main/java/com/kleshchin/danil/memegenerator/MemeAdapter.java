@@ -54,7 +54,12 @@ class MemeAdapter extends RecyclerView.Adapter<MemeViewHolder> {
         memes_.clear();
         memesCopy_.addAll(memes);
         memes_.addAll(memes);
-        Collections.sort(memes_, new Comparator<Meme>() {
+        sortListMemes(memes_);
+        sortListMemes(memesCopy_);
+    }
+
+    private void sortListMemes(@NonNull List<Meme> memes) {
+        Collections.sort(memes, new Comparator<Meme>() {
             @Override
             public int compare(Meme o1, Meme o2) {
                 return o1.name.compareToIgnoreCase(o2.name);

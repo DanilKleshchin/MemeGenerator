@@ -33,7 +33,6 @@ class MemeViewHolder extends RecyclerView.ViewHolder {
         if (isPermissionGrated(context)) {
             return;
         }
-
         builder.load(meme.url)
                 .into(memeIcon_)
                 .placeholder(R.mipmap.ic_meme_placeholder)

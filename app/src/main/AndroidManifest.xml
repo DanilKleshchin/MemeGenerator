@@ -21,6 +21,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <provider
+            android:name=".MemeContentProvider"
+            android:authorities="${applicationId}.db"
+            android:exported="false"/>
     </application>
 
 </manifest>

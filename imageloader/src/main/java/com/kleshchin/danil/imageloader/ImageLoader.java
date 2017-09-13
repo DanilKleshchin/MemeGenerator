@@ -67,7 +67,7 @@ public class ImageLoader implements ImageDownloader.OnFileDownloadListener {
         if (imageView_ == null || url_ == null || context_ == null) {
             return;
         }
-        checkAvailableMemory(lruCache_, 10 * 1024 * 1024);
+        checkAvailableMemory(lruCache_, 15 * 1024 * 1024);
         AsyncTask<String, Integer, Void> asyncTask = downloadAsyncTasks.get(imageView_);
         if (asyncTask != null) {
             if (asyncTask.getStatus() == AsyncTask.Status.RUNNING) {
@@ -100,10 +100,10 @@ public class ImageLoader implements ImageDownloader.OnFileDownloadListener {
         long usedMemory = runtime.totalMemory() - runtime.freeMemory();
         long availableMemory = maxMemory - usedMemory;
         if (availableMemory <= minBytesMemory) {
-            int size = bitmaps.size() / 2;
+            /*int size = bitmaps.size() / 2;
             for (int i = 0; i < size; ++i) {
                 bitmaps.get(i).recycle();
-            }
+            }*/
             lruCache.evictAll();
         }
     }

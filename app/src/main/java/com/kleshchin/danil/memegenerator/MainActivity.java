@@ -1,7 +1,6 @@
 package com.kleshchin.danil.memegenerator;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -22,6 +21,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.stetho.Stetho;
 import com.kleshchin.danil.memegenerator.models.Meme;
 
 import java.util.ArrayList;
@@ -36,13 +36,12 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
     private RecyclerView recyclerView_;
     TextView toolbarTitle_;
     private static boolean isLinearLayoutRecyclerView_ = true;
-    @Nullable
-    private Handler handler_ = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Stetho.initializeWithDefaults(this);
         bindViews();
         LoaderManager loaderManager = getSupportLoaderManager();
         MemeRepository.getInstance().setMemeListener(this, loaderManager, this);
@@ -77,8 +76,9 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
                         .findFirstVisibleItemPosition();
             }
         }
+        int gridLayoutSpanCount = 2;
         RecyclerView.LayoutManager layoutManager = isLinearLayoutRecyclerView_ ?
-                new GridLayoutManager(this, 2) :
+                new GridLayoutManager(this, gridLayoutSpanCount) :
                 new LinearLayoutManager(this);
         item.setIcon(isLinearLayoutRecyclerView_ ?
                 ContextCompat.getDrawable(this, R.mipmap.ic_view_list) :
@@ -169,16 +169,7 @@ public class MainActivity extends AppCompatActivity implements MemeRepository.On
 
         @Override
         public boolean onQueryTextChange(final @NonNull String newText) {
-            if (newText.length() > 2) {
-                if (handler_ != null) {
-                    handler_.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            adapter_.searchByQuery(newText);
-                        }
-                    }, 500);
-                }
-            }
+            adapter_.searchByQuery(newText);
             return true;
         }
     }

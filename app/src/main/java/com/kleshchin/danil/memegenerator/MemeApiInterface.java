@@ -83,19 +83,19 @@ class MemeApiInterface implements LoaderManager.LoaderCallbacks {
             return;
         }
         if (strJson == null) {
-            listener_.onLoadError(MemeRepository.CONNECTION_ERROR);
+            listener_.onReceiveError(MemeRepository.CONNECTION_ERROR);
             return;
         }
         try {
             JSONObject dataJsonObject = new JSONObject(strJson);
-            listener_.onLoadMemeInformation(ModelHelper.createMeme(dataJsonObject));
+            listener_.onReceiveMemeInformation(ModelHelper.createMemeFromJson(dataJsonObject));
         } catch (JSONException e) {
-            listener_.onLoadError(e.getMessage());
+            listener_.onReceiveError(e.getMessage());
         }
     }
 
     interface OnLoadMemeInformationListener {
-        void onLoadMemeInformation(@Nullable List<Meme> memes);
-        void onLoadError(@NonNull String message);
+        void onReceiveMemeInformation(@Nullable List<Meme> memes);
+        void onReceiveError(@NonNull String message);
     }
 }

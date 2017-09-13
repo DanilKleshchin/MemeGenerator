@@ -54,20 +54,19 @@ class ImageDownloader extends AsyncTask<String, Integer, Void> {
         }
         File file = createDirectory(path_);
         file = new File(file.getPath() + File.separator + createFileNameFromStringUrl(stringUrl[0]));
-        if (checkNetworkAvailable()) {
-            if (file.exists()) {
-                file.delete();
-            }
+        filePath = file.getAbsolutePath();
+
+        if (!checkNetworkAvailable()) {
+            return null;
+        }
+
+        if (!file.exists() || file.length() == 0) {
+            file.delete();
             try {
-                filePath = file.getAbsolutePath();
                 OutputStream outputStream = new FileOutputStream(filePath);
                 downloadFile(stringUrl[0], outputStream);
             } catch (FileNotFoundException e) {
                 e.getMessage();
-            }
-        } else {
-            if (file.exists()) {
-                filePath = file.getAbsolutePath();
             }
         }
         loadImageIntoView();

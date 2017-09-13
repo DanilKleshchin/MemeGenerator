@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import com.kleshchin.danil.memegenerator.models.Meme;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -52,6 +54,12 @@ class MemeAdapter extends RecyclerView.Adapter<MemeViewHolder> {
         memes_.clear();
         memesCopy_.addAll(memes);
         memes_.addAll(memes);
+        Collections.sort(memes_, new Comparator<Meme>() {
+            @Override
+            public int compare(Meme o1, Meme o2) {
+                return o1.name.compareToIgnoreCase(o2.name);
+            }
+        });
     }
 
     void searchByQuery(@NonNull String query) {

@@ -20,8 +20,8 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "MemeInfo";
 
     public static final String MEME_TABLE = "Meme";
-    static final String KEY_ID = "_id";
-    public static final String KEY_MEME_NAME = "Name";
+    public static final String KEY_ID = "_id";
+    static final String KEY_MEME_NAME = "Name";
     static final String KEY_ICON_URL = "Icon_Url";
     static final String KEY_WIDTH = "Icon_Width";
     static final String KEY_HEIGHT = "Icon_Height";

@@ -3,6 +3,8 @@ package com.kleshchin.danil.memegenerator;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,11 +21,12 @@ import java.util.List;
 /**
  * Created by Danil Kleshchin on 11.09.2017.
  */
-class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
+public class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
         MemeApiInterface.OnLoadMemeInformationListener {
 
-    static final String CONNECTION_ERROR = "CONNECTION ERROR";
+    public static final String CONNECTION_ERROR = "CONNECTION ERROR";
 
+    @Nullable
     private OnMemeListReceiveListener memeListener_;
 
     private MemeRepository() {
@@ -35,7 +38,7 @@ class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
         switch (id) {
             case MemeContentProvider.TABLE_MEME_CODE:
                 return new CursorLoader(MemeApplication.getInstance(), MemeContentProvider.createUrlForTable(DBHelper.MEME_TABLE),
-                        null, null, null, DBHelper.KEY_MEME_NAME);
+                        null, null, null, DBHelper.KEY_ID);
             default:
                 throw new IllegalArgumentException("no id handed");
         }
@@ -57,9 +60,11 @@ class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
 
     @Override
     public void onReceiveMemeInformation(@Nullable List<Meme> memes) {
-        memeListener_.onMemeListReceive(memes);
         if (memes == null) {
             return;
+        }
+        if (memeListener_ != null) {
+            memeListener_.onMemeListReceive(memes);
         }
         ContentResolver resolver = MemeApplication.getInstance().getContentResolver();
         resolver.bulkInsert(MemeContentProvider.createUrlForTable(DBHelper.MEME_TABLE),
@@ -68,7 +73,9 @@ class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
 
     @Override
     public void onReceiveError(@NonNull String message) {
-        memeListener_.onErrorReceive(message);
+        if (memeListener_ != null) {
+            memeListener_.onErrorReceive(message);
+        }
     }
 
     @Override
@@ -76,21 +83,39 @@ class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
 
     }
 
-    void setMemeListener(@NonNull Context context, @NonNull LoaderManager loaderManager, @NonNull OnMemeListReceiveListener listener) {
+    public void setMemeListener(@NonNull Context context, @NonNull LoaderManager loaderManager, @NonNull OnMemeListReceiveListener listener) {
         memeListener_ = listener;
+        if (checkNetworkAvailable(context)) {
+            MemeApiInterface apiInterface = new MemeApiInterface(context);
+            apiInterface.loadMemeData(loaderManager, this);
+            return;
+        }
         loaderManager.initLoader(MemeContentProvider.TABLE_MEME_CODE, null, this);
-        MemeApiInterface apiInterface = new MemeApiInterface(context);
-        apiInterface.loadMemeData(loaderManager, this);
     }
 
-    void setOnRefreshMemeListener(@NonNull Context context, @NonNull LoaderManager loaderManager, @NonNull OnMemeListReceiveListener listener) {
-        loaderManager.restartLoader(MemeContentProvider.TABLE_MEME_CODE, null, this);
+    public void setMemeListenerOnRefresh(@NonNull Context context, @NonNull LoaderManager loaderManager, @NonNull OnMemeListReceiveListener listener) {
         memeListener_ = listener;
-        MemeApiInterface apiInterface = new MemeApiInterface(context);
-        apiInterface.loadMemeOnRefresh(loaderManager, this);
+        if (checkNetworkAvailable(context)) {
+            MemeApiInterface apiInterface = new MemeApiInterface(context);
+            apiInterface.loadMemeDataOnRefresh(loaderManager, this);
+            return;
+        }
+        loaderManager.initLoader(MemeContentProvider.TABLE_MEME_CODE, null, this);
     }
 
-    static MemeRepository getInstance() {
+    private boolean checkNetworkAvailable(@NonNull Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        return networkInfo != null &&
+                networkInfo.isAvailable() &&
+                networkInfo.isConnected();
+    }
+
+    public void releaseOnMemeListReceiveListener() {
+        memeListener_ = null;
+    }
+
+    public static MemeRepository getInstance() {
         return MemeRepositoryHolder.instance;
     }
 
@@ -98,7 +123,7 @@ class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
         private static final MemeRepository instance = new MemeRepository();
     }
 
-    interface OnMemeListReceiveListener {
+    public interface OnMemeListReceiveListener {
         void onMemeListReceive(@Nullable List<Meme> memes);
         void onErrorReceive(@NonNull String message);
     }

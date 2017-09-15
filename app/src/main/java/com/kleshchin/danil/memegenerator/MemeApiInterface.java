@@ -65,8 +65,8 @@ class MemeApiInterface implements LoaderManager.LoaderCallbacks {
         }
     }
 
-    void loadMemeOnRefresh(@NonNull LoaderManager loaderManager,
-                           @NonNull OnLoadMemeInformationListener listener) {
+    void loadMemeDataOnRefresh(@NonNull LoaderManager loaderManager,
+                               @NonNull OnLoadMemeInformationListener listener) {
         listener_ = listener;
         loaderManager.restartLoader(KEY_MEME, setArgs("https://api.imgflip.com/get_memes"), this);
     }

@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/linear_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical">
 
     <include
-        layout="@layout/toolbar"
-        android:id="@+id/toolbar_meme_redactor"/>
+        android:id="@+id/toolbar_meme_redactor"
+        layout="@layout/toolbar"/>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ImageView
-            android:id="@+id/image_meme_redactor"
+        <RelativeLayout
+            android:id="@+id/root"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginBottom="?attr/actionBarSize"/>
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/image_meme_redactor"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="?attr/actionBarSize"/>
+        </RelativeLayout>
 
         <android.support.design.widget.BottomNavigationView
             android:id="@+id/bottom_navigation_view_meme_redactor"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:layout_alignParentBottom="true"
-            android:background="@color/colorPrimary"/>
+            android:background="@color/colorPrimary"
+            app:itemIconTint="@color/colorAccent"
+            app:itemTextColor="@color/colorAccent"
+            app:menu="@menu/meme_redactor_bottom_view_menu"/>
     </RelativeLayout>
 </LinearLayout>

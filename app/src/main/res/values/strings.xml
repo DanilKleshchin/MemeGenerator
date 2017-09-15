@@ -3,4 +3,7 @@
     <string name="connection_error">Connection error</string>
     <string name="change_layout">Change layout</string>
     <string name="share_image">Share Image</string>
+    <string name="clear_last_added_text">Clear text</string>
+    <string name="add_text">Add text</string>
+    <string name="tap_here">Tap here!</string>
 </resources>

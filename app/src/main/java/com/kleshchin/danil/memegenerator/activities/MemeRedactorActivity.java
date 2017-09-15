@@ -9,16 +9,21 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.BottomNavigationView;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.kleshchin.danil.memegenerator.R;
@@ -41,9 +46,12 @@ public class MemeRedactorActivity extends AppCompatActivity {
     private ImageView memeIcon_;
     @Nullable
     private Meme meme_;
-    private FrameLayout main;
-    private int id = 0;
-    private List<EditText> editTexts = new ArrayList<EditText>();
+    private BottomNavigationView bottomNavigationView;
+    private List<EditText> addedTextsToMeme_ = new ArrayList<>();
+
+    private ViewGroup rootView_;
+    private int xDelta_;
+    private int yDelta_;
 
     static Intent newIntent(@NonNull Context context, @NonNull Meme meme) {
         Intent intent = new Intent(context, MemeRedactorActivity.class);
@@ -55,7 +63,6 @@ public class MemeRedactorActivity extends AppCompatActivity {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_meme_redactor);
-        //main = (FrameLayout) findViewById(R.id.linear_layout);
         meme_ = (Meme) getIntent().getSerializableExtra(KEY_ICON_URL);
         bindViews();
         if (meme_ != null) {
@@ -152,6 +159,79 @@ public class MemeRedactorActivity extends AppCompatActivity {
         if (meme_ != null) {
             ((TextView) toolbar.findViewById(R.id.toolbar_title)).setText(meme_.name);
         }
+        bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation_view_meme_redactor);
+        bottomNavigationView.setOnNavigationItemSelectedListener(new NavigationItemSelectedListener());
+        rootView_ = (ViewGroup) findViewById(R.id.root);
         memeIcon_ = (ImageView) findViewById(R.id.image_meme_redactor);
+    }
+
+    private class NavigationItemSelectedListener implements
+            BottomNavigationView.OnNavigationItemSelectedListener {
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.action_add_text:
+                    addTextToMeme();
+                    break;
+                case R.id.action_clear_last_text:
+                    removeTextFromMeme();
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        }
+    }
+
+    private void addTextToMeme() {
+        EditText editText = new EditText(this);
+        editText.setHint(R.string.tap_here);
+        editText.setTextSize(22);
+        editText.setAllCaps(true);
+        editText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        editText.setBackgroundColor(ContextCompat.getColor(this, R.color.color_transparent));
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        layoutParams.leftMargin = 50;
+        layoutParams.topMargin = 50;
+        editText.setLayoutParams(layoutParams);
+        editText.setOnTouchListener(new OnViewTouchListener());
+        addedTextsToMeme_.add(editText);
+        rootView_.addView(editText);
+    }
+
+    private void removeTextFromMeme() {
+        if (!addedTextsToMeme_.isEmpty()) {
+            EditText lastAddedText = addedTextsToMeme_.get(addedTextsToMeme_.size() - 1);
+            rootView_.removeView(lastAddedText);
+            addedTextsToMeme_.remove(lastAddedText);
+        }
+    }
+
+    private class OnViewTouchListener implements View.OnTouchListener {
+
+        @Override
+        public boolean onTouch(View view, MotionEvent event) {
+            final int X = (int) event.getRawX();
+            final int Y = (int) event.getRawY();
+
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_DOWN:
+                    RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
+                    xDelta_ = X - lParams.leftMargin;
+                    yDelta_ = Y - lParams.topMargin;
+                    return false;
+                case MotionEvent.ACTION_MOVE:
+                    RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
+                    layoutParams.leftMargin = X - xDelta_;
+                    layoutParams.topMargin = Y - yDelta_;
+                    view.setLayoutParams(layoutParams);
+                    rootView_.invalidate();
+                    return true;
+                default:
+                    return false;
+            }
+        }
     }
 }

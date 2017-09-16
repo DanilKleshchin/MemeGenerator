@@ -3,10 +3,9 @@ package com.kleshchin.danil.memegenerator.activities;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
@@ -21,19 +20,19 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.kleshchin.danil.memegenerator.MemeDoneDialog;
 import com.kleshchin.danil.memegenerator.R;
 import com.kleshchin.danil.memegenerator.models.Meme;
+import com.madrapps.pikolo.HSLColorPicker;
+import com.madrapps.pikolo.listeners.SimpleColorSelectionListener;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,10 +45,14 @@ public class MemeRedactorActivity extends AppCompatActivity {
     private ImageView memeIcon_;
     @Nullable
     private Meme meme_;
-    private BottomNavigationView bottomNavigationView;
+    private BottomNavigationView bottomNavigationView_;
     private List<EditText> addedTextsToMeme_ = new ArrayList<>();
+    private static int currentTextColor_ = Color.BLACK;
 
+    private TextView colorShower_;
     private ViewGroup rootView_;
+    private ViewGroup colorPickerRootView_;
+    private ViewGroup memeIconRootView_;
     private int xDelta_;
     private int yDelta_;
 
@@ -80,8 +83,8 @@ public class MemeRedactorActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.share:
-                shareMeme();
+            case R.id.done:
+                showDoneDialog();
                 return true;
             case android.R.id.home:
                 finish();
@@ -91,60 +94,21 @@ public class MemeRedactorActivity extends AppCompatActivity {
         }
     }
 
-
-    private void shareMeme() {
-        if (meme_ == null) {
-            return;
+    private void showDoneDialog() {
+        Bitmap bitmap = createBitmap();
+        if (meme_ != null) {
+            MemeDoneDialog doneDialog = new MemeDoneDialog(this, bitmap, meme_.name);
+            doneDialog.show();
         }
-        Picasso.with(getApplicationContext()).load(meme_.url).into(new Target() {
-            @Override
-            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                Intent i = new Intent(Intent.ACTION_SEND);
-                i.setType("image/*");
-                i.putExtra(Intent.EXTRA_STREAM, getLocalBitmapUri(bitmap));
-                startActivity(Intent.createChooser(i, getString(R.string.share_image)));
-            }
-
-            @Override
-            public void onBitmapFailed(Drawable errorDrawable) {
-            }
-
-            @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable) {
-            }
-        });
-        /*LinearLayout editTextLayout = new LinearLayout(this);
-        editTextLayout.setOrientation(LinearLayout.VERTICAL);
-        main.addView(editTextLayout);
-
-        EditText editText1 = new EditText(this);
-        editText1.setId(id++);
-        editTextLayout.addView(editText1);
-
-        editTexts.add(editText1);
-
-        EditText editText2 = new EditText(this);
-        editText2.setId(id++);
-        editTextLayout.addView(editText2);
-
-        editTexts.add(editText2);*/
-
     }
 
-    @Nullable
-    public Uri getLocalBitmapUri(@NonNull Bitmap bmp) {
-        Uri bmpUri = null;
-        try {
-            File file = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                    "share_image_" + System.currentTimeMillis() + ".png");
-            FileOutputStream out = new FileOutputStream(file);
-            bmp.compress(Bitmap.CompressFormat.PNG, 90, out);
-            out.close();
-            bmpUri = Uri.fromFile(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return bmpUri;
+    @NonNull
+    private Bitmap createBitmap() {
+        Bitmap bitmap = Bitmap.createBitmap(findViewById(R.id.meme_icon_redactor).getWidth(),
+                findViewById(R.id.meme_icon_redactor).getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        findViewById(R.id.meme_icon_redactor_root).draw(canvas);
+        return bitmap;
     }
 
     private void bindViews() {
@@ -159,10 +123,32 @@ public class MemeRedactorActivity extends AppCompatActivity {
         if (meme_ != null) {
             ((TextView) toolbar.findViewById(R.id.toolbar_title)).setText(meme_.name);
         }
-        bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation_view_meme_redactor);
-        bottomNavigationView.setOnNavigationItemSelectedListener(new NavigationItemSelectedListener());
-        rootView_ = (ViewGroup) findViewById(R.id.root);
-        memeIcon_ = (ImageView) findViewById(R.id.image_meme_redactor);
+        HSLColorPicker colorPicker = (HSLColorPicker) findViewById(R.id.color_picker);
+        bottomNavigationView_ = (BottomNavigationView) findViewById(R.id.bottom_navigation_view_meme_redactor);
+        bottomNavigationView_.setOnNavigationItemSelectedListener(new NavigationItemSelectedListener());
+        rootView_ = (ViewGroup) findViewById(R.id.root_view);
+        memeIconRootView_ = (ViewGroup) findViewById(R.id.meme_icon_redactor_root);
+        colorPickerRootView_ = (ViewGroup) findViewById(R.id.color_picker_root);
+        memeIcon_ = (ImageView) findViewById(R.id.meme_icon_redactor);
+        colorShower_ = (TextView) findViewById(R.id.color_shower);
+        Button btnColorSubmit = (Button) findViewById(R.id.btn_color_submit);
+        btnColorSubmit.setOnClickListener(new OnButtonClickListener());
+        colorPicker.setColorSelectionListener(new SimpleColorSelectionListener() {
+            @Override
+            public void onColorSelected(int color) {
+                currentTextColor_ = color;
+                colorShower_.setTextColor(color);
+            }
+        });
+    }
+
+    private class OnButtonClickListener implements Button.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            rootView_.setVisibility(View.VISIBLE);
+            colorPickerRootView_.setVisibility(View.GONE);
+        }
     }
 
     private class NavigationItemSelectedListener implements
@@ -177,6 +163,9 @@ public class MemeRedactorActivity extends AppCompatActivity {
                 case R.id.action_clear_last_text:
                     removeTextFromMeme();
                     break;
+                case R.id.action_choose_text_color:
+                    showChooseColorView();
+                    break;
                 default:
                     break;
             }
@@ -184,9 +173,15 @@ public class MemeRedactorActivity extends AppCompatActivity {
         }
     }
 
+    private void showChooseColorView() {
+        rootView_.setVisibility(View.GONE);
+        colorPickerRootView_.setVisibility(View.VISIBLE);
+    }
+
     private void addTextToMeme() {
         EditText editText = new EditText(this);
         editText.setHint(R.string.tap_here);
+        editText.setTextColor(currentTextColor_);
         editText.setTextSize(22);
         editText.setAllCaps(true);
         editText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
@@ -198,13 +193,13 @@ public class MemeRedactorActivity extends AppCompatActivity {
         editText.setLayoutParams(layoutParams);
         editText.setOnTouchListener(new OnViewTouchListener());
         addedTextsToMeme_.add(editText);
-        rootView_.addView(editText);
+        memeIconRootView_.addView(editText);
     }
 
     private void removeTextFromMeme() {
         if (!addedTextsToMeme_.isEmpty()) {
             EditText lastAddedText = addedTextsToMeme_.get(addedTextsToMeme_.size() - 1);
-            rootView_.removeView(lastAddedText);
+            memeIconRootView_.removeView(lastAddedText);
             addedTextsToMeme_.remove(lastAddedText);
         }
     }

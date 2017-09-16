@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical">
 
     <include
@@ -10,19 +10,21 @@
         layout="@layout/toolbar"/>
 
     <RelativeLayout
+        android:id="@+id/root_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <RelativeLayout
-            android:id="@+id/root"
+            android:id="@+id/meme_icon_redactor_root"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
             <ImageView
-                android:id="@+id/image_meme_redactor"
+                android:id="@+id/meme_icon_redactor"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginBottom="?attr/actionBarSize"/>
+
         </RelativeLayout>
 
         <android.support.design.widget.BottomNavigationView
@@ -35,4 +37,36 @@
             app:itemTextColor="@color/colorAccent"
             app:menu="@menu/meme_redactor_bottom_view_menu"/>
     </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/color_picker_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btn_color_submit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@color/color_transparent"
+            android:text="@string/submit"
+            android:textColor="@color/colorPrimaryDark"
+            android:textSize="30sp"/>
+
+        <TextView
+            android:id="@+id/color_shower"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/example_text"
+            android:textSize="30sp"/>
+
+        <com.madrapps.pikolo.HSLColorPicker
+            android:id="@+id/color_picker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
 </LinearLayout>

@@ -6,6 +6,10 @@
         android:icon="@mipmap/ic_add_text"
         android:title="@string/add_text"/>
     <item
+        android:id="@+id/action_choose_text_color"
+        android:icon="@mipmap/ic_choose_color"
+        android:title="@string/choose_text_color"/>
+    <item
         android:id="@+id/action_clear_last_text"
         android:icon="@mipmap/ic_clear_added_text"
         android:title="@string/clear_last_added_text"/>

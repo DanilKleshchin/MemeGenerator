@@ -2,8 +2,11 @@
     <string name="app_name">MemeGenerator</string>
     <string name="connection_error">Connection error</string>
     <string name="change_layout">Change layout</string>
-    <string name="share_image">Share Image</string>
+    <string name="done">Done</string>
     <string name="clear_last_added_text">Clear text</string>
     <string name="add_text">Add text</string>
     <string name="tap_here">Tap here!</string>
+    <string name="choose_text_color">Choose color</string>
+    <string name="example_text">Example text</string>
+    <string name="submit">Submit</string>
 </resources>

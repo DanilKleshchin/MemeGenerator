@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".activity.MemeRedactorActivity">
     <item
-        android:id="@+id/share"
-        android:icon="@mipmap/ic_share"
-        android:title="@string/share_image"
+        android:id="@+id/done"
+        android:icon="@mipmap/ic_done"
+        android:title="@string/done"
         app:showAsAction="ifRoom"/>
 </menu>

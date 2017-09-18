@@ -36,8 +36,11 @@ public class MemeViewHolder extends RecyclerView.ViewHolder implements View.OnCl
     public void setData(@NonNull Context context, @NonNull Meme meme) {
         currentMeme_ = meme;
         memeName_.setText(meme.name);
+        memeIcon_.getLayoutParams().width = meme.width;
+        memeIcon_.getLayoutParams().height = meme.height;
         Picasso.with(context)
                 .load(meme.url)
+                .placeholder(R.mipmap.ic_meme_placeholder)
                 .into(memeIcon_);
     }
 

@@ -52,7 +52,9 @@ public class MainActivity extends AppCompatActivity implements
         Stetho.initializeWithDefaults(this);
         bindViews();
         LoaderManager loaderManager = getSupportLoaderManager();
-        MemeRepository.getInstance().setMemeListener(this, loaderManager, this);
+        MemeRepository repository = MemeRepository.getInstance();
+        repository.setOnMemeListReceiveListenerListener(this);
+        repository.startLoading(this, loaderManager);
     }
 
     @Override
@@ -180,8 +182,9 @@ public class MainActivity extends AppCompatActivity implements
         public void onRefresh() {
             refreshLayout_.setRefreshing(true);
             LoaderManager loaderManager = getSupportLoaderManager();
-            MemeRepository.getInstance()
-                    .setMemeListenerOnRefresh(MainActivity.this, loaderManager, MainActivity.this);
+            MemeRepository repository = MemeRepository.getInstance();
+            repository.setOnMemeListReceiveListenerListener(MainActivity.this);
+            repository.refreshLoading(MainActivity.this, loaderManager);
         }
     }
 

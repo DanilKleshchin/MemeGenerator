@@ -83,8 +83,11 @@ public class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
 
     }
 
-    public void setMemeListener(@NonNull Context context, @NonNull LoaderManager loaderManager, @NonNull OnMemeListReceiveListener listener) {
+    public void setOnMemeListReceiveListenerListener(@NonNull OnMemeListReceiveListener listener) {
         memeListener_ = listener;
+    }
+
+    public void startLoading(@NonNull Context context, @NonNull LoaderManager loaderManager) {
         if (checkNetworkAvailable(context)) {
             MemeApiInterface apiInterface = new MemeApiInterface(context);
             apiInterface.loadMemeData(loaderManager, this);
@@ -93,8 +96,7 @@ public class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
         loaderManager.initLoader(MemeContentProvider.TABLE_MEME_CODE, null, this);
     }
 
-    public void setMemeListenerOnRefresh(@NonNull Context context, @NonNull LoaderManager loaderManager, @NonNull OnMemeListReceiveListener listener) {
-        memeListener_ = listener;
+    public void refreshLoading(@NonNull Context context, @NonNull LoaderManager loaderManager) {
         if (checkNetworkAvailable(context)) {
             MemeApiInterface apiInterface = new MemeApiInterface(context);
             apiInterface.loadMemeDataOnRefresh(loaderManager, this);

@@ -3,8 +3,10 @@ package com.kleshchin.danil.memegenerator.activities;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -33,6 +35,7 @@ import com.madrapps.pikolo.HSLColorPicker;
 import com.madrapps.pikolo.listeners.SimpleColorSelectionListener;
 import com.squareup.picasso.Picasso;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +43,10 @@ import java.util.List;
  * Created by Danil Kleshchin on 14.09.2017.
  */
 public class MemeRedactorActivity extends AppCompatActivity {
-    public static final String KEY_ICON_URL = "Icon_url";
+    public static final String KEY_MEME = "Meme";
+
+    public static final String KEY_MEME_BITMAP = "MemeBitmap";
+    public static final String KEY_MEME_NAME = "MemeName";
 
     private ImageView memeIcon_;
     @Nullable
@@ -58,7 +64,18 @@ public class MemeRedactorActivity extends AppCompatActivity {
 
     static Intent newIntent(@NonNull Context context, @NonNull Meme meme) {
         Intent intent = new Intent(context, MemeRedactorActivity.class);
-        intent.putExtra(KEY_ICON_URL, meme);
+        intent.putExtra(KEY_MEME, meme);
+        return intent;
+    }
+
+    static Intent newIntent(@NonNull Context context, @NonNull Bitmap memeIcon,
+                            @NonNull String memeName) {
+        Intent intent = new Intent(context, MemeRedactorActivity.class);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        memeIcon.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+        byte[] byteArray = stream.toByteArray();
+        intent.putExtra(KEY_MEME_BITMAP, byteArray);
+        intent.putExtra(KEY_MEME_NAME, memeName);
         return intent;
     }
 
@@ -66,11 +83,21 @@ public class MemeRedactorActivity extends AppCompatActivity {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_meme_redactor);
-        meme_ = (Meme) getIntent().getSerializableExtra(KEY_ICON_URL);
-        bindViews();
-        if (meme_ != null) {
-            Picasso.with(this).load(meme_.url).into(memeIcon_);
+        byte[] byteArray = getIntent().getByteArrayExtra(KEY_MEME_BITMAP);     //TODO refactor this snippet
+        if (byteArray != null) {
+            Bitmap memeIcon = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+            bindViews();
+            memeIcon_.setImageBitmap(memeIcon);
+            meme_ = new Meme();
+            meme_.name = getIntent().getStringExtra(KEY_MEME_NAME);
+        } else {
+            meme_ = (Meme) getIntent().getSerializableExtra(KEY_MEME);
+            bindViews();
+            if (meme_ != null) {
+                Picasso.with(this).load(Uri.parse(meme_.url)).into(memeIcon_);
+            }
         }
+
     }
 
     @Override

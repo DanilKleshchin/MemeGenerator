@@ -1,11 +1,15 @@
 package com.kleshchin.danil.memegenerator;
 
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -25,6 +29,9 @@ public class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
         MemeApiInterface.OnLoadMemeInformationListener {
 
     public static final String CONNECTION_ERROR = "CONNECTION ERROR";
+    private Intent intent_ = new Intent(MemeApplication.getInstance(), MemeService.class);
+    private boolean isBoundService_ = false;
+    private ServiceConnection serviceConnection_;
 
     @Nullable
     private OnMemeListReceiveListener memeListener_;
@@ -83,8 +90,36 @@ public class MemeRepository implements LoaderManager.LoaderCallbacks<Cursor>,
 
     }
 
-    public void setOnMemeListReceiveListenerListener(@NonNull OnMemeListReceiveListener listener) {
+    public void setOnMemeListReceiveListener(@NonNull OnMemeListReceiveListener listener) {
         memeListener_ = listener;
+    }
+
+    public void startService() {
+        serviceConnection_ = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                isBoundService_ = true;
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                isBoundService_ = false;
+            }
+        };
+        isBoundService_ = true;
+        Context context = MemeApplication.getInstance();
+        context.bindService(intent_, serviceConnection_, 0);
+        context.startService(intent_);
+    }
+
+    public void stopService() {
+        if (!isBoundService_) {
+            return;
+        }
+        Context context = MemeApplication.getInstance();
+        context.unbindService(serviceConnection_);
+        context.stopService(intent_);
+        isBoundService_ = false;
     }
 
     public void startLoading(@NonNull Context context, @NonNull LoaderManager loaderManager) {

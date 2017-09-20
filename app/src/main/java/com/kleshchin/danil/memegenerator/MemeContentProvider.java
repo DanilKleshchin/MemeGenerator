@@ -57,7 +57,7 @@ public class MemeContentProvider extends ContentProvider {
                 builder.setTables(DBHelper.MEME_TABLE);
                 break;
             default:
-                throw new IllegalArgumentException("uri not recognized!");
+                throw new IllegalArgumentException("url not recognized!");
         }
         cursor = builder.query(database_, projection, selection, selectionArgs, null, null, sortOrder, null);
         Context context = getContext();
@@ -82,7 +82,7 @@ public class MemeContentProvider extends ContentProvider {
                 table = DBHelper.MEME_TABLE;
                 break;
             default:
-                throw new IllegalArgumentException("uri not recognized!");
+                throw new IllegalArgumentException("url not recognized!");
         }
         long result = dbHelper_.getWritableDatabase().insertWithOnConflict(table, null, values, SQLiteDatabase.CONFLICT_REPLACE);
         return ContentUris.withAppendedId(uri, result);
@@ -97,7 +97,7 @@ public class MemeContentProvider extends ContentProvider {
                 table = DBHelper.MEME_TABLE;
                 break;
             default:
-                throw new IllegalArgumentException("uri not recognized!");
+                throw new IllegalArgumentException("url not recognized!");
         }
         return database_.delete(table, selection, selectionArgs);
     }

@@ -32,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:layout_alignParentBottom="true"
-            android:background="@color/colorPrimary"
+            android:background="@drawable/main_activity_button_background"
             app:itemIconTint="@color/colorAccent"
             app:itemTextColor="@color/colorAccent"
             app:menu="@menu/meme_redactor_bottom_view_menu"/>

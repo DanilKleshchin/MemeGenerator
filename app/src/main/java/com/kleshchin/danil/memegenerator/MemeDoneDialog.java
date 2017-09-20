@@ -29,10 +29,6 @@ public class MemeDoneDialog extends Dialog {
     private Bitmap meme_;
     private String memeName_;
 
-    public MemeDoneDialog(@NonNull Context context) {
-        super(context);
-    }
-
     public MemeDoneDialog(@NonNull Context context, @NonNull Bitmap meme, @NonNull String memeName) {
         super(context);
         meme_ = meme;
@@ -64,11 +60,9 @@ public class MemeDoneDialog extends Dialog {
             switch (v.getId()) {
                 case R.id.save_meme:
                     try {
-                        ByteArrayOutputStream byteArrayOutputStream = null;
-                        File file = null;
-                        byteArrayOutputStream = new ByteArrayOutputStream();
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                         meme_.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
-                        file = new File(Environment.getExternalStorageDirectory() + File.separator + memeName_ + ".png");
+                        File file = new File(Environment.getExternalStorageDirectory() + File.separator + memeName_ + ".png");
                         file.createNewFile();
                         FileOutputStream fileOutputStream = new FileOutputStream(file);
                         fileOutputStream.write(byteArrayOutputStream.toByteArray());

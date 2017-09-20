@@ -5,4 +5,5 @@
     <color name="colorAccent">#ffffff</color>
     <color name="color_black">@android:color/black</color>
     <color name="color_transparent">@android:color/transparent</color>
+    <color name="color_button_background">#87b5ff</color>
 </resources>

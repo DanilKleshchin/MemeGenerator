@@ -9,4 +9,9 @@
     <string name="choose_text_color">Choose color</string>
     <string name="example_text">Example text</string>
     <string name="submit">Submit</string>
+    <string name="take_a_photo">Take a photo</string>
+    <string name="gallery">Gallery</string>
+    <string name="server">Server</string>
+    <string name="choose_meme_from">Choose meme from:</string>
+    <string name="cant_open_photo">Can\'t open the photo</string>
 </resources>

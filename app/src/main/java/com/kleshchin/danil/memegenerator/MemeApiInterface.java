@@ -1,6 +1,7 @@
 package com.kleshchin.danil.memegenerator;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -16,6 +17,8 @@ import org.json.JSONObject;
 
 import java.util.List;
 
+import static com.kleshchin.danil.memegenerator.MemeRepository.CONNECTION_ERROR;
+
 /**
  * Created by Danil Kleshchin on 11.09.2017.
  */
@@ -26,7 +29,9 @@ class MemeApiInterface implements LoaderManager.LoaderCallbacks {
     private final static int KEY_MEME = 6;
 
     @Nullable
-    private OnLoadMemeInformationListener listener_;
+    private OnLoadMemeInformationListener loadMemeInformationListener_;
+    @Nullable
+    private OnLoadMemeDataAsyncTaskListener asyncTaskListener_;
     @NonNull
     private Context context_;
 
@@ -60,15 +65,21 @@ class MemeApiInterface implements LoaderManager.LoaderCallbacks {
     void loadMemeData(@NonNull LoaderManager loaderManager,
                       @Nullable OnLoadMemeInformationListener listener) {
         if (listener != null) {
-            listener_ = listener;
+            loadMemeInformationListener_ = listener;
             loaderManager.initLoader(KEY_MEME, setArgs("https://api.imgflip.com/get_memes"), this);
         }
     }
 
     void loadMemeDataOnRefresh(@NonNull LoaderManager loaderManager,
                                @NonNull OnLoadMemeInformationListener listener) {
-        listener_ = listener;
+        loadMemeInformationListener_ = listener;
         loaderManager.restartLoader(KEY_MEME, setArgs("https://api.imgflip.com/get_memes"), this);
+    }
+
+    void loadMemeAsyncTask(@NonNull OnLoadMemeDataAsyncTaskListener listener) {
+        asyncTaskListener_ = listener;
+        MemeServiceLoader memeServiceLoader = new MemeServiceLoader();
+        memeServiceLoader.execute("https://api.imgflip.com/get_memes");
     }
 
     @NonNull
@@ -79,23 +90,59 @@ class MemeApiInterface implements LoaderManager.LoaderCallbacks {
     }
 
     private void onLoadMemeInformation(@Nullable String strJson) {
-        if (listener_ == null) {
+        if (loadMemeInformationListener_ == null) {
             return;
         }
         if (strJson == null) {
-            listener_.onReceiveError(MemeRepository.CONNECTION_ERROR);
+            loadMemeInformationListener_.onReceiveError(CONNECTION_ERROR);
             return;
         }
         try {
             JSONObject dataJsonObject = new JSONObject(strJson);
-            listener_.onReceiveMemeInformation(ModelHelper.createMemeFromJson(dataJsonObject));
+            loadMemeInformationListener_.onReceiveMemeInformation(ModelHelper.createMemeFromJson(dataJsonObject));
         } catch (JSONException e) {
-            listener_.onReceiveError(e.getMessage());
+            loadMemeInformationListener_.onReceiveError(e.getMessage());
+        }
+    }
+
+    private void onLoadMemeInformationAsyncTask(@Nullable String strJson) {
+        if (asyncTaskListener_ == null) {
+            return;
+        }
+        if (strJson == null) {
+            asyncTaskListener_.onLoadMemeErrorAsyncTask(CONNECTION_ERROR);
+            return;
+        }
+        try {
+            JSONObject dataJsonObject = new JSONObject(strJson);
+            asyncTaskListener_.onLoadMemeAsyncTask(ModelHelper.createMemeFromJson(dataJsonObject));
+        } catch (JSONException e) {
+            asyncTaskListener_.onLoadMemeErrorAsyncTask(e.getMessage());
+        }
+    }
+
+    private class MemeServiceLoader extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            InformationLoader loader = new InformationLoader(context_, params[0]);
+            return loader.loadData();
+        }
+
+        @Override
+        protected void onPostExecute(@Nullable String s) {
+            super.onPostExecute(s);
+            onLoadMemeInformationAsyncTask(s);
         }
     }
 
     interface OnLoadMemeInformationListener {
         void onReceiveMemeInformation(@Nullable List<Meme> memes);
         void onReceiveError(@NonNull String message);
+    }
+
+    interface OnLoadMemeDataAsyncTaskListener {
+        void onLoadMemeAsyncTask(@Nullable List<Meme> memes);
+        void onLoadMemeErrorAsyncTask(@NonNull String message);
     }
 }

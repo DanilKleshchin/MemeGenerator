@@ -28,7 +28,7 @@ public class InformationLoader extends AsyncTaskLoader<String> {
         forceLoad();
     }
 
-    private String loadData() {
+    public String loadData() {
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url(url_)

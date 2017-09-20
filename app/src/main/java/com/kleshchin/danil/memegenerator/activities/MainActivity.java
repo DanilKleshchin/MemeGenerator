@@ -1,213 +1,126 @@
 package com.kleshchin.danil.memegenerator.activities;
 
 import android.content.Intent;
-import android.os.Bundle;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SearchView;
-import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.os.Bundle;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.Button;
 import android.widget.Toast;
 
-import com.facebook.stetho.Stetho;
-import com.kleshchin.danil.memegenerator.MemeRepository;
 import com.kleshchin.danil.memegenerator.R;
-import com.kleshchin.danil.memegenerator.adapters.MemeAdapter;
 import com.kleshchin.danil.memegenerator.models.Meme;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
-public class MainActivity extends AppCompatActivity implements
-        MemeRepository.OnMemeListReceiveListener,
-        MemeAdapter.OnRecyclerViewItemClickListener {
+public class MainActivity extends AppCompatActivity {
 
-    private List<Meme> memes_ = new ArrayList<>();
-    private MemeAdapter adapter_ = new MemeAdapter(this, memes_);
-    private SwipeRefreshLayout refreshLayout_;
-    private SearchView searchView_;
-    private RecyclerView recyclerView_;
-    TextView toolbarTitle_;
-    private static boolean isLinearLayoutRecyclerView_ = true;
+    private static final int TAKE_PHOTO_REQUEST = 10;
+    private static final int IMAGE_GALLERY_REQUEST = 20;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Stetho.initializeWithDefaults(this);
         bindViews();
-        LoaderManager loaderManager = getSupportLoaderManager();
-        MemeRepository repository = MemeRepository.getInstance();
-        repository.setOnMemeListReceiveListenerListener(this);
-        repository.startLoading(this, loaderManager);
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.meme_list_menu, menu);
-        return true;
-    }
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (data == null) {
+            return;
+        }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.change_layout:
-                changeRecyclerViewLayout(item);
-                return true;
+        switch (requestCode) {
+            case IMAGE_GALLERY_REQUEST:
+                receiveImageGalleryRequest(data);
+                break;
+            case TAKE_PHOTO_REQUEST:
+                receiveTakePhotoRequest(data);
+                break;
             default:
-                return super.onOptionsItemSelected(item);
+                break;
         }
     }
 
-    @Override
-    public void onMemeListReceive(@Nullable List<Meme> memes) {
-        refreshLayout_.setRefreshing(false);
-        if (memes != null) {
-            memes_ = memes;
-            sortListMemes(memes_);
-            adapter_.setMemes(memes_);
-            adapter_.notifyDataSetChanged();
-        }
-        MemeRepository.getInstance().releaseOnMemeListReceiveListener();
-    }
-
-    @Override
-    public void onErrorReceive(@NonNull String message) {
-        refreshLayout_.setRefreshing(false);
-        if (message.equals(MemeRepository.CONNECTION_ERROR)) {
-            message = getResources().getString(R.string.connection_error);
-        }
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        MemeRepository.getInstance().releaseOnMemeListReceiveListener();
-    }
-
-    @Override
-    public void onRecyclerViewItemClick(@Nullable Meme meme) {
-        if (meme != null) {
+    private void receiveImageGalleryRequest(@NonNull Intent data) {
+        Uri imageUri = data.getData();
+        InputStream inputStream;
+        try {
+            inputStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            long id = System.currentTimeMillis();
+            String memeName = imageUri.getLastPathSegment();
+            Meme meme = new Meme(id, bitmap.getWidth(), bitmap.getHeight(),
+                    memeName, imageUri.toString());
             Intent intent = MemeRedactorActivity.newIntent(this, meme);
             startActivity(intent);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(this, R.string.cant_open_photo, Toast.LENGTH_LONG).show();
         }
     }
 
-    private void sortListMemes(@NonNull List<Meme> memes) {
-        Collections.sort(memes, new Comparator<Meme>() {
-            @Override
-            public int compare(Meme o1, Meme o2) {
-                if (o2.id > o1.id) {
-                    return -1;
-                } else if (o2.id == o1.id) {
-                    return 0;
-                }
-                return 1;
-            }
-        });
-    }
-
-    private void changeRecyclerViewLayout(@NonNull MenuItem item) {
-        int scrollPosition = 0;
-        if (recyclerView_.getLayoutManager() != null) {
-            if (isLinearLayoutRecyclerView_) {
-                scrollPosition = ((LinearLayoutManager) recyclerView_.getLayoutManager())
-                        .findFirstVisibleItemPosition();
-            } else {
-                scrollPosition = ((GridLayoutManager) recyclerView_.getLayoutManager())
-                        .findFirstVisibleItemPosition();
-            }
+    private void receiveTakePhotoRequest(@NonNull Intent data) {
+        Bitmap memeIcon = (Bitmap) data.getExtras().get("data");
+        if (memeIcon == null) {
+            return;
         }
-        int gridLayoutSpanCount = 2;
-        RecyclerView.LayoutManager layoutManager = isLinearLayoutRecyclerView_ ?
-                new GridLayoutManager(this, gridLayoutSpanCount) :
-                new LinearLayoutManager(this);
-        item.setIcon(isLinearLayoutRecyclerView_ ?
-                ContextCompat.getDrawable(this, R.mipmap.ic_view_list) :
-                ContextCompat.getDrawable(this, R.mipmap.ic_view_module));
-        recyclerView_.setLayoutManager(layoutManager);
-        recyclerView_.scrollToPosition(scrollPosition);
-        isLinearLayoutRecyclerView_ = !isLinearLayoutRecyclerView_;
+        String memeName = String.valueOf(System.currentTimeMillis());
+        Intent intent = MemeRedactorActivity.newIntent(this, memeIcon, memeName);
+        startActivity(intent);
     }
 
     private void bindViews() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.searching_toolbar);
-        setSupportActionBar(toolbar);
-        refreshLayout_ = (SwipeRefreshLayout) findViewById(R.id.meme_swipe_refresh);
-        refreshLayout_.setRefreshing(true);
-        refreshLayout_.setOnRefreshListener(new OnSwipeRefreshListener());
-        recyclerView_ = (RecyclerView) findViewById(R.id.meme_recycler_view);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        DividerItemDecoration divider = new DividerItemDecoration(recyclerView_.getContext(),
-                layoutManager.getOrientation());
-        divider.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider_recycler_view));
-        recyclerView_.setLayoutManager(layoutManager);
-        recyclerView_.addItemDecoration(divider);
-        adapter_.setItemClickListener(this);
-        recyclerView_.setAdapter(adapter_);
-        toolbarTitle_ = (TextView) findViewById(R.id.toolbar_search_title);
-        searchView_ = (SearchView) findViewById(R.id.search_view_meme);
-        searchView_.setOnQueryTextListener(new OnQueryTextSearchListener());
-        searchView_.setOnSearchClickListener(new OnSearchViewClickListener());
-        searchView_.setOnCloseListener(new OnCloseSearchViewListener());
-        EditText searchEditText = (EditText)
-                searchView_.findViewById(android.support.v7.appcompat.R.id.search_src_text);
-        searchEditText.setTextColor(ContextCompat.getColor(this, R.color.colorAccent));
+        Button btnGallery = (Button) findViewById(R.id.btn_gallery);
+        Button btnTakePhoto = (Button) findViewById(R.id.btn_take_photo);
+        Button btnInternet = (Button) findViewById(R.id.btn_internet);
+        btnGallery.setOnClickListener(new OnButtonClickListener());
+        btnTakePhoto.setOnClickListener(new OnButtonClickListener());
+        btnInternet.setOnClickListener(new OnButtonClickListener());
     }
 
-    private class OnCloseSearchViewListener implements SearchView.OnCloseListener {
-        @Override
-        public boolean onClose() {
-            toolbarTitle_.setVisibility(View.VISIBLE);
-            String emptyQuery = "";
-            adapter_.searchByQuery(emptyQuery);
-            return false;
-        }
-    }
+    private class OnButtonClickListener implements Button.OnClickListener {
 
-    private class OnSwipeRefreshListener implements SwipeRefreshLayout.OnRefreshListener {
-        @Override
-        public void onRefresh() {
-            refreshLayout_.setRefreshing(true);
-            LoaderManager loaderManager = getSupportLoaderManager();
-            MemeRepository repository = MemeRepository.getInstance();
-            repository.setOnMemeListReceiveListenerListener(MainActivity.this);
-            repository.refreshLoading(MainActivity.this, loaderManager);
-        }
-    }
-
-    private class OnSearchViewClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            toolbarTitle_.setVisibility(View.GONE);
+            Intent intent;
+            switch (v.getId()) {
+                case R.id.btn_gallery:
+                    intent = new Intent(Intent.ACTION_PICK);
+                    File pictureDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                    String pictureDirectoryPath = pictureDirectory.getPath();
+                    Uri data = Uri.parse(pictureDirectoryPath);
+                    String imagePattern = "image/*";
+                    intent.setDataAndType(data, imagePattern);
+                    startActivityForResult(intent, IMAGE_GALLERY_REQUEST);
+                    break;
+                case R.id.btn_take_photo:
+                    intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    startActivityForResult(intent, TAKE_PHOTO_REQUEST);
+                    break;
+                case R.id.btn_internet:
+                    intent = new Intent(MainActivity.this, MemeListFromApiActivity.class);
+                    startActivity(intent);
+                    break;
+                default:
+                    break;
+            }
         }
-    }
 
-    private class OnQueryTextSearchListener implements SearchView.OnQueryTextListener {
+        private void takeScreenshoot() {
 
-        @Override
-        public boolean onQueryTextSubmit(String query) {
-            searchView_.clearFocus();
-            adapter_.searchByQuery(query);
-            return true;
         }
 
-        @Override
-        public boolean onQueryTextChange(final @NonNull String newText) {
-            adapter_.searchByQuery(newText);
-            return true;
+        private void chooseFromGallery() {
+
         }
     }
 }

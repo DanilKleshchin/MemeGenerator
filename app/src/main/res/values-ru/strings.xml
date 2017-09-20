@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Мемо генератор</string>
+    <string name="add_text">Добавить текст</string>
+    <string name="cant_open_photo">Не могу открыть фото</string>
+    <string name="choose_text_color">Выберите цвет</string>
+    <string name="clear_last_added_text">Удалить текст</string>
+    <string name="connection_error">Ошибка соединения</string>
+    <string name="done">Готово</string>
+    <string name="example_text">Пример текста</string>
+    <string name="gallery">Галерея</string>
+    <string name="server">Сервер</string>
+    <string name="submit">Подтвердить</string>
+    <string name="take_a_photo">Сделать фото</string>
+    <string name="tap_here">Нажми сюда!</string>
+    <string name="choose_meme_from">Выберите мем</string>
+    <string name="change_layout">Изменить макет</string>
+</resources>

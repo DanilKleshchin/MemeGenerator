@@ -57,25 +57,27 @@ public class MemeService extends Service implements MemeApiInterface.OnLoadMemeD
             return;
         }
         String message = "Memes from the server have been updated!";
-        createAndShowNotification(message);
+        String title = "Notification!";
+        createAndShowNotification(title, title, message);
     }
 
     @Override
     public void onLoadMemeErrorAsyncTask(@NonNull String message) {
-        createAndShowNotification(message);
+        String title = "Error!";
+        createAndShowNotification(title, title, message);
     }
 
-    private Notification.Builder createAndShowNotification(@NonNull String message) {
+    private Notification.Builder createAndShowNotification(@NonNull String ticker, @NonNull String title, @NonNull String message) {
         Notification.Builder builder = new Notification.Builder(this);
         Intent intent = new Intent(this, MemeListFromApiActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
         builder.setSmallIcon(R.mipmap.ic_launcher_round)
                 .setLargeIcon(BitmapFactory.decodeResource(this.getResources(), R.mipmap.ic_launcher))
-                .setTicker("Error!")
+                .setTicker(ticker)
                 .setWhen(System.currentTimeMillis())
                 .setAutoCancel(true)
-                .setContentTitle("Error")
+                .setContentTitle(title)
                 .setContentText(message);
         NotificationManager notificationManager =
                 (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);

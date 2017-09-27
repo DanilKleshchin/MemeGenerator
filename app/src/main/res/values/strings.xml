@@ -14,4 +14,5 @@
     <string name="server">Server</string>
     <string name="choose_meme_from">Choose meme from:</string>
     <string name="cant_open_photo">Can\'t open the photo</string>
+    <string name="Поделиться">Share meme</string>
 </resources>

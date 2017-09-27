@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.CAMERA"/>
 
+    <uses-feature android:name="android.hardware.camera"/>
+
 
     <application
         android:name=".MemeApplication"
@@ -16,17 +18,24 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".activities.MainActivity">
+        <activity
+            android:name=".activities.MainActivity"
+            android:configChanges="keyboardHidden|orientation"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <activity android:name=".activities.MemeListFromApiActivity"/>
-
-        <activity android:name=".activities.MemeRedactorActivity"/>
+        <activity
+            android:name=".activities.MemeListFromApiActivity"
+            android:configChanges="keyboardHidden|orientation"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".activities.MemeRedactorActivity"
+            android:configChanges="keyboardHidden|orientation"
+            android:screenOrientation="portrait"/>
 
         <provider
             android:name=".MemeContentProvider"

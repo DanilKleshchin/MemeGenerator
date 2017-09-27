@@ -45,16 +45,6 @@
         android:orientation="vertical"
         android:visibility="gone">
 
-        <Button
-            android:id="@+id/btn_color_submit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:background="@color/color_transparent"
-            android:text="@string/submit"
-            android:textColor="@color/colorPrimaryDark"
-            android:textSize="30sp"/>
-
         <TextView
             android:id="@+id/color_shower"
             android:layout_width="wrap_content"

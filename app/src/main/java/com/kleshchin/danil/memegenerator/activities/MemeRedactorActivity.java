@@ -3,7 +3,6 @@ package com.kleshchin.danil.memegenerator.activities;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.net.Uri;
@@ -16,13 +15,13 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -35,7 +34,7 @@ import com.madrapps.pikolo.HSLColorPicker;
 import com.madrapps.pikolo.listeners.SimpleColorSelectionListener;
 import com.squareup.picasso.Picasso;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,23 +43,24 @@ import java.util.List;
  */
 public class MemeRedactorActivity extends AppCompatActivity {
     public static final String KEY_MEME = "Meme";
-
-    public static final String KEY_MEME_BITMAP = "MemeBitmap";
-    public static final String KEY_MEME_NAME = "MemeName";
+    public static final String KEY_MEME_PATH = "MemePath";
 
     private ImageView memeIcon_;
     @Nullable
     private Meme meme_;
-    private BottomNavigationView bottomNavigationView_;
     private List<EditText> addedTextsToMeme_ = new ArrayList<>();
+    private List<TextView> addedDragTextsToMeme_ = new ArrayList<>();
+    private SparseArray<EditText> dragPair_ = new SparseArray<>();
     private static int currentTextColor_ = Color.BLACK;
 
     private TextView colorShower_;
     private ViewGroup rootView_;
     private ViewGroup colorPickerRootView_;
     private ViewGroup memeIconRootView_;
-    private int xDelta_;
-    private int yDelta_;
+    private int dragTextXDelta_;
+    private int dragTextYDelta_;
+    private int editTextXDelta_;
+    private int editTextYDelta_;
 
     static Intent newIntent(@NonNull Context context, @NonNull Meme meme) {
         Intent intent = new Intent(context, MemeRedactorActivity.class);
@@ -68,14 +68,9 @@ public class MemeRedactorActivity extends AppCompatActivity {
         return intent;
     }
 
-    static Intent newIntent(@NonNull Context context, @NonNull Bitmap memeIcon,
-                            @NonNull String memeName) {
+    static Intent newIntent(@NonNull Context context, @NonNull String filePath) {
         Intent intent = new Intent(context, MemeRedactorActivity.class);
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        memeIcon.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-        byte[] byteArray = stream.toByteArray();
-        intent.putExtra(KEY_MEME_BITMAP, byteArray);
-        intent.putExtra(KEY_MEME_NAME, memeName);
+        intent.putExtra(KEY_MEME_PATH, filePath);
         return intent;
     }
 
@@ -83,16 +78,15 @@ public class MemeRedactorActivity extends AppCompatActivity {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_meme_redactor);
-        byte[] byteArray = getIntent().getByteArrayExtra(KEY_MEME_BITMAP);     //TODO refactor this snippet
-        if (byteArray != null) {
-            Bitmap memeIcon = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-            bindViews();
-            memeIcon_.setImageBitmap(memeIcon);
+        bindViews();
+        String filePath = getIntent().getStringExtra(KEY_MEME_PATH);
+        if (filePath != null) {
+            File file = new File(filePath);
+            Picasso.with(this).load(file).into(memeIcon_);
             meme_ = new Meme();
-            meme_.name = getIntent().getStringExtra(KEY_MEME_NAME);
+            meme_.name = file.getName();
         } else {
             meme_ = (Meme) getIntent().getSerializableExtra(KEY_MEME);
-            bindViews();
             if (meme_ != null) {
                 Picasso.with(this).load(Uri.parse(meme_.url)).into(memeIcon_);
             }
@@ -111,7 +105,12 @@ public class MemeRedactorActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.done:
-                showDoneDialog();
+                if (rootView_.getVisibility() == View.GONE) {
+                    rootView_.setVisibility(View.VISIBLE);
+                    colorPickerRootView_.setVisibility(View.GONE);
+                } else {
+                    showDoneDialog();
+                }
                 return true;
             case android.R.id.home:
                 finish();
@@ -151,15 +150,13 @@ public class MemeRedactorActivity extends AppCompatActivity {
             ((TextView) toolbar.findViewById(R.id.toolbar_title)).setText(meme_.name);
         }
         HSLColorPicker colorPicker = (HSLColorPicker) findViewById(R.id.color_picker);
-        bottomNavigationView_ = (BottomNavigationView) findViewById(R.id.bottom_navigation_view_meme_redactor);
-        bottomNavigationView_.setOnNavigationItemSelectedListener(new NavigationItemSelectedListener());
+        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation_view_meme_redactor);
+        bottomNavigationView.setOnNavigationItemSelectedListener(new NavigationItemSelectedListener());
         rootView_ = (ViewGroup) findViewById(R.id.root_view);
         memeIconRootView_ = (ViewGroup) findViewById(R.id.meme_icon_redactor_root);
         colorPickerRootView_ = (ViewGroup) findViewById(R.id.color_picker_root);
         memeIcon_ = (ImageView) findViewById(R.id.meme_icon_redactor);
         colorShower_ = (TextView) findViewById(R.id.color_shower);
-        Button btnColorSubmit = (Button) findViewById(R.id.btn_color_submit);
-        btnColorSubmit.setOnClickListener(new OnButtonClickListener());
         colorPicker.setColorSelectionListener(new SimpleColorSelectionListener() {
             @Override
             public void onColorSelected(int color) {
@@ -167,15 +164,6 @@ public class MemeRedactorActivity extends AppCompatActivity {
                 colorShower_.setTextColor(color);
             }
         });
-    }
-
-    private class OnButtonClickListener implements Button.OnClickListener {
-
-        @Override
-        public void onClick(View v) {
-            rootView_.setVisibility(View.VISIBLE);
-            colorPickerRootView_.setVisibility(View.GONE);
-        }
     }
 
     private class NavigationItemSelectedListener implements
@@ -206,21 +194,36 @@ public class MemeRedactorActivity extends AppCompatActivity {
     }
 
     private void addTextToMeme() {
+        TextView dragText = new TextView(this);
+        dragText.setText("%%");
+        dragText.setTextColor(Color.BLACK);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        layoutParams.leftMargin = 20;
+        layoutParams.topMargin = 20;
+        dragText.setLayoutParams(layoutParams);
+        dragText.setOnTouchListener(new OnViewTouchListener());
+        addedDragTextsToMeme_.add(dragText);
+        rootView_.addView(dragText);
+
+
         EditText editText = new EditText(this);
+        editText.setCursorVisible(false);
         editText.setHint(R.string.tap_here);
         editText.setTextColor(currentTextColor_);
         editText.setTextSize(22);
         editText.setAllCaps(true);
         editText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         editText.setBackgroundColor(ContextCompat.getColor(this, R.color.color_transparent));
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+        RelativeLayout.LayoutParams editTextLayoutParams = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        layoutParams.leftMargin = 50;
-        layoutParams.topMargin = 50;
-        editText.setLayoutParams(layoutParams);
-        editText.setOnTouchListener(new OnViewTouchListener());
+        editTextLayoutParams.leftMargin = 40;
+        editTextLayoutParams.topMargin = 20;
+        editText.setLayoutParams(editTextLayoutParams);
+
         addedTextsToMeme_.add(editText);
         memeIconRootView_.addView(editText);
+        dragPair_.put(dragText.hashCode(), editText);
     }
 
     private void removeTextFromMeme() {
@@ -238,17 +241,28 @@ public class MemeRedactorActivity extends AppCompatActivity {
             final int X = (int) event.getRawX();
             final int Y = (int) event.getRawY();
 
+
+            RelativeLayout.LayoutParams dragTextParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
+            TextView dragText = (TextView) view;
+            EditText editText = dragPair_.get(dragText.hashCode());
+            if (editText == null) {
+                return true;
+            }
+            RelativeLayout.LayoutParams editTextParams = (RelativeLayout.LayoutParams) editText.getLayoutParams();
             switch (event.getAction() & MotionEvent.ACTION_MASK) {
                 case MotionEvent.ACTION_DOWN:
-                    RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
-                    xDelta_ = X - lParams.leftMargin;
-                    yDelta_ = Y - lParams.topMargin;
-                    return false;
+                    dragTextXDelta_ = X - dragTextParams.leftMargin;
+                    dragTextYDelta_ = Y - dragTextParams.topMargin;
+                    editTextXDelta_ = X - editTextParams.leftMargin;
+                    editTextYDelta_ = Y - editTextParams.topMargin;
+                    return true;
                 case MotionEvent.ACTION_MOVE:
-                    RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
-                    layoutParams.leftMargin = X - xDelta_;
-                    layoutParams.topMargin = Y - yDelta_;
-                    view.setLayoutParams(layoutParams);
+                    dragTextParams.leftMargin = X - dragTextXDelta_;
+                    dragTextParams.topMargin = Y - dragTextYDelta_;
+                    view.setLayoutParams(dragTextParams);
+                    editTextParams.leftMargin = X - editTextXDelta_;
+                    editTextParams.topMargin = Y - editTextYDelta_;
+                    editText.setLayoutParams(editTextParams);
                     rootView_.invalidate();
                     return true;
                 default:

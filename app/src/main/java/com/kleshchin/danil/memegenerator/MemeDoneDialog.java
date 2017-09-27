@@ -1,6 +1,7 @@
 package com.kleshchin.danil.memegenerator;
 
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -23,9 +24,6 @@ import java.io.IOException;
  */
 public class MemeDoneDialog extends Dialog {
 
-    private Button btnShare_;
-    private Button btnSave_;
-    private Button btnShareAndSave_;
     private Bitmap meme_;
     private String memeName_;
 
@@ -44,13 +42,11 @@ public class MemeDoneDialog extends Dialog {
     }
 
     private void bindViews() {
-        btnSave_ = (Button) findViewById(R.id.save_meme);
-        btnShare_ = (Button) findViewById(R.id.share_meme);
-        btnShareAndSave_ = (Button) findViewById(R.id.share_and_save_meme);
+        Button btnSave = (Button) findViewById(R.id.save_meme);
+        Button btnShare = (Button) findViewById(R.id.share_meme);
         OnButtonClickListener buttonClickListener = new OnButtonClickListener();
-        btnSave_.setOnClickListener(buttonClickListener);
-        btnShare_.setOnClickListener(buttonClickListener);
-        btnShareAndSave_.setOnClickListener(buttonClickListener);
+        btnSave.setOnClickListener(buttonClickListener);
+        btnShare.setOnClickListener(buttonClickListener);
     }
 
     private class OnButtonClickListener implements Button.OnClickListener {
@@ -72,16 +68,18 @@ public class MemeDoneDialog extends Dialog {
                     }
                     break;
                 case R.id.share_meme:
-                    String bitmapPath = MediaStore.Images.Media.
-                            insertImage(getContext().getContentResolver(), meme_, memeName_, null);
-                    Uri bitmapUri = Uri.parse(bitmapPath);
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.setType("image/png");
-                    intent.putExtra(Intent.EXTRA_STREAM, bitmapUri);
-                    getContext().startActivity(Intent.createChooser(intent, "Share meme"));
-                    break;
-                case R.id.share_and_save_meme:
-                    break;
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        String bitmapPath = MediaStore.Images.Media.
+                                insertImage(getContext().getContentResolver(), meme_, memeName_, null);
+                        Uri bitmapUri = Uri.parse(bitmapPath);
+                        intent.setType("image/png");
+                        intent.putExtra(Intent.EXTRA_STREAM, bitmapUri);
+                        getContext().startActivity(Intent.createChooser(intent, getContext().getString(R.string.Поделиться)));
+                        break;
+                    } catch (ActivityNotFoundException e) {
+                        e.printStackTrace();
+                    }
                 default:
                     break;
             }

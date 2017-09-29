@@ -28,23 +28,32 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
         <activity
             android:name=".activities.MemeListFromApiActivity"
             android:configChanges="keyboardHidden|orientation"
             android:screenOrientation="portrait"/>
+
         <activity
             android:name=".activities.MemeRedactorActivity"
             android:configChanges="keyboardHidden|orientation"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
+        </activity>
 
         <provider
             android:name=".MemeContentProvider"
             android:authorities="${applicationId}.db"
             android:exported="false"/>
+
         <service
             android:name=".MemeService"
             android:enabled="true"
-            android:exported="true">
-        </service>
+            android:exported="true"/>
     </application>
 </manifest>

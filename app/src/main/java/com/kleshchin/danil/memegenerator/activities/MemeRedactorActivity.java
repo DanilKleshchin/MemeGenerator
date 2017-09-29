@@ -11,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.util.Pair;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -26,15 +27,16 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.kleshchin.danil.memegenerator.MemeDoneDialog;
 import com.kleshchin.danil.memegenerator.R;
 import com.kleshchin.danil.memegenerator.models.Meme;
 import com.madrapps.pikolo.HSLColorPicker;
 import com.madrapps.pikolo.listeners.SimpleColorSelectionListener;
+import com.squareup.picasso.MemoryPolicy;
 import com.squareup.picasso.Picasso;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,17 +44,17 @@ import java.util.List;
  * Created by Danil Kleshchin on 14.09.2017.
  */
 public class MemeRedactorActivity extends AppCompatActivity {
-    public static final String KEY_MEME = "Meme";
-    public static final String KEY_MEME_PATH = "MemePath";
+    private static final String KEY_MEME = "Meme";
+    private static final String KEY_MEME_PATH = "MemePath";
+    private static final String ACTION_PHOTO_IMAGE = "PhotoImage";
+    private static final String ACTION_URL_IMAGE = "UrlImage";
 
     private ImageView memeIcon_;
     @Nullable
     private Meme meme_;
-    private List<EditText> addedTextsToMeme_ = new ArrayList<>();
-    private List<TextView> addedDragTextsToMeme_ = new ArrayList<>();
+    private List<Pair<EditText, TextView>> addedTextsToMeme_ = new ArrayList<>();
     private SparseArray<EditText> dragPair_ = new SparseArray<>();
     private static int currentTextColor_ = Color.BLACK;
-
     private TextView colorShower_;
     private ViewGroup rootView_;
     private ViewGroup colorPickerRootView_;
@@ -62,15 +64,19 @@ public class MemeRedactorActivity extends AppCompatActivity {
     private int editTextXDelta_;
     private int editTextYDelta_;
 
+    @NonNull
     static Intent newIntent(@NonNull Context context, @NonNull Meme meme) {
         Intent intent = new Intent(context, MemeRedactorActivity.class);
         intent.putExtra(KEY_MEME, meme);
+        intent.setAction(ACTION_URL_IMAGE);
         return intent;
     }
 
+    @NonNull
     static Intent newIntent(@NonNull Context context, @NonNull String filePath) {
         Intent intent = new Intent(context, MemeRedactorActivity.class);
         intent.putExtra(KEY_MEME_PATH, filePath);
+        intent.setAction(ACTION_PHOTO_IMAGE);
         return intent;
     }
 
@@ -79,19 +85,33 @@ public class MemeRedactorActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_meme_redactor);
         bindViews();
+        Intent intent = getIntent();
         String filePath = getIntent().getStringExtra(KEY_MEME_PATH);
-        if (filePath != null) {
-            File file = new File(filePath);
-            Picasso.with(this).load(file).into(memeIcon_);
-            meme_ = new Meme();
-            meme_.name = file.getName();
-        } else {
-            meme_ = (Meme) getIntent().getSerializableExtra(KEY_MEME);
-            if (meme_ != null) {
-                Picasso.with(this).load(Uri.parse(meme_.url)).into(memeIcon_);
-            }
+        String action = getIntent().getAction();
+        switch (action) {
+            case Intent.ACTION_VIEW:
+                Uri imageUri = intent.getData();
+                if (imageUri != null) {
+                    Picasso.with(this).load(imageUri).into(memeIcon_);
+                    meme_ = new Meme();
+                    meme_.name = imageUri.getLastPathSegment();
+                }
+                break;
+            case ACTION_URL_IMAGE:
+                meme_ = (Meme) intent.getSerializableExtra(KEY_MEME);
+                if (meme_ != null) {
+                    Picasso.with(this).load(Uri.parse(meme_.url)).into(memeIcon_);
+                }
+                break;
+            case ACTION_PHOTO_IMAGE:
+                Picasso.with(this).load("file://" + filePath).fit().centerCrop()
+                        .memoryPolicy(MemoryPolicy.NO_CACHE).into(memeIcon_);
+                meme_ = new Meme();
+                meme_.name = Uri.parse(filePath).getLastPathSegment();
+                break;
+            default:
+                break;
         }
-
     }
 
     @Override
@@ -203,7 +223,6 @@ public class MemeRedactorActivity extends AppCompatActivity {
         layoutParams.topMargin = 20;
         dragText.setLayoutParams(layoutParams);
         dragText.setOnTouchListener(new OnViewTouchListener());
-        addedDragTextsToMeme_.add(dragText);
         rootView_.addView(dragText);
 
 
@@ -221,15 +240,16 @@ public class MemeRedactorActivity extends AppCompatActivity {
         editTextLayoutParams.topMargin = 20;
         editText.setLayoutParams(editTextLayoutParams);
 
-        addedTextsToMeme_.add(editText);
+        addedTextsToMeme_.add(new Pair<>(editText, dragText));
         memeIconRootView_.addView(editText);
         dragPair_.put(dragText.hashCode(), editText);
     }
 
     private void removeTextFromMeme() {
         if (!addedTextsToMeme_.isEmpty()) {
-            EditText lastAddedText = addedTextsToMeme_.get(addedTextsToMeme_.size() - 1);
-            memeIconRootView_.removeView(lastAddedText);
+            Pair<EditText, TextView> lastAddedText = addedTextsToMeme_.get(addedTextsToMeme_.size() - 1);
+            memeIconRootView_.removeView(lastAddedText.first);
+            rootView_.removeView(lastAddedText.second);
             addedTextsToMeme_.remove(lastAddedText);
         }
     }

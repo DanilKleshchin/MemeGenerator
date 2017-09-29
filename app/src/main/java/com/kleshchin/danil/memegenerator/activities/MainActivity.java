@@ -16,12 +16,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.facebook.stetho.Stetho;
 import com.kleshchin.danil.memegenerator.R;
 import com.kleshchin.danil.memegenerator.models.Meme;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Stetho.initializeWithDefaults(this);
         setContentView(R.layout.activity_main);
         bindViews();
     }
@@ -74,17 +75,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void receiveTakePhotoRequest() {
-        try {
-            Bitmap memeBitmap = MediaStore.Images.Media.getBitmap(
-                    getContentResolver(), imageUri_);
-            if (memeBitmap == null) {
-                return;
-            }
-            String memeIconPath = getRealPathFromURI(imageUri_);
+        String memeIconPath = getRealPathFromURI(imageUri_);
+        if (memeIconPath != null) {
             Intent intent = MemeRedactorActivity.newIntent(this, memeIconPath);
             startActivity(intent);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -97,13 +91,18 @@ public class MainActivity extends AppCompatActivity {
         btnInternet.setOnClickListener(new OnButtonClickListener());
     }
 
+    @Nullable
     private String getRealPathFromURI(Uri contentUri) {
-        String[] proj = { MediaStore.Images.Media.DATA };
-        Cursor cursor = managedQuery(contentUri, proj, null, null, null);
-        int column_index = cursor
-                .getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-        cursor.moveToFirst();
-        return cursor.getString(column_index);
+        String result = null;
+        String[] projection = {MediaStore.Images.Media.DATA};
+        Cursor cursor = getContentResolver().query(contentUri, projection, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            int column_index = cursor
+                    .getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            result = cursor.getString(column_index);
+            cursor.close();
+        }
+        return result;
     }
 
     private class OnButtonClickListener implements Button.OnClickListener {
@@ -145,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 String imagePattern = "image/*";
                 intent.setDataAndType(data, imagePattern);
                 startActivityForResult(intent, IMAGE_GALLERY_REQUEST);
-            } catch(ActivityNotFoundException e) {
+            } catch (ActivityNotFoundException e) {
                 Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
